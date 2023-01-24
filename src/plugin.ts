@@ -60,12 +60,16 @@ task(TASK_COMPILE_SOLIDITY_CHECK_ERRORS, async ({ output, ...params }: { output:
       if (e.severity !== 'warning' || !e.sourceLocation) {
         return [e];
       }
-      const rule = classifier.getWarningRule(parseInteger(e.errorCode), e.sourceLocation);
-      if (rule === 'off') {
-        return [];
-      } else if (rule === 'error') {
-        return [{ ...e, severity: 'error' }];
-      } else {
+      try {
+        const rule = classifier.getWarningRule(parseInteger(e.errorCode, -1), e.sourceLocation);
+        if (rule === 'off') {
+          return [];
+        } else if (rule === 'error') {
+          return [{ ...e, severity: 'error' }];
+        } else {
+          return [e];
+        }
+      } catch (err) {
         return [e];
       }
     }),
@@ -74,10 +78,10 @@ task(TASK_COMPILE_SOLIDITY_CHECK_ERRORS, async ({ output, ...params }: { output:
   return runSuper({ output, ...params });
 });
 
-function parseInteger(n: string): number {
+function parseInteger(n: string, def: number): number {
   if (/^\d+$/.test(n)) {
     return Number(n);
   } else {
-    throw new Error(`Expected integer but got '${n}'`)
+    return def;
   }
 }
